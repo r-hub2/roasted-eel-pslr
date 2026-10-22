@@ -1,0 +1,41 @@
+Package: pslr
+Type: Package
+Title: Public Suffix List Engine
+Version: 1.2.2
+Authors@R: 
+    person("Bart", "Turczynski", email = "bartek@turczynski.pl",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0002-8788-7980"))
+Description: A focused implementation of the Public Suffix List (PSL). Bundles a
+    reproducible, pinned PSL snapshot and implements the official prevailing-rule
+    algorithm to answer public-suffix (eTLD) and registrable-domain (eTLD+1)
+    queries. Distinguishes ICANN and PRIVATE rule sections, accepts Unicode and
+    ASCII hostnames via 'punycoder' canonicalization, and supports an explicit,
+    validated offline refresh path. The matcher is compiled with 'cpp11' and
+    requires no external system library. Used as the PSL engine by the 'rurl'
+    package.
+License: MIT + file LICENSE
+Language: en-US
+URL: https://bart-turczynski.gitlab.io/pslr/,
+        https://gitlab.com/bart-turczynski/pslr,
+        https://bart-turczynski.r-universe.dev/pslr,
+        https://CRAN.R-project.org/package=pslr
+BugReports: https://gitlab.com/bart-turczynski/pslr/-/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends: R (>= 4.1.0)
+Imports: digest, punycoder (>= 1.3.0), tools, utils
+LinkingTo: cpp11
+Suggests: curl, knitr, oysteR, rmarkdown, rosv, testthat (>= 3.0.0),
+        withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
+X-schema.org-keywords: public suffix list, PSL, eTLD, eTLD+1,
+        registrable domain, ICANN, domain parsing, domain extraction,
+        domain names, TLD, cookie domains, IDNA, public suffix
+NeedsCompilation: yes
+Packaged: 2026-10-22 16:37:27 UTC; bartturczynski
+Author: Bart Turczynski [aut, cre, cph] (ORCID:
+    <https://orcid.org/0000-0002-8788-7980>)
+Maintainer: Bart Turczynski <bartek@turczynski.pl>

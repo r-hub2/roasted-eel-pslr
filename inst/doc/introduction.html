@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Introduction to pslr</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to pslr</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(pslr)</span></code></pre></div>
+<div id="what-pslr-does" class="section level2">
+<h2>What pslr does</h2>
+<p>The <a href="https://publicsuffix.org">Public Suffix List</a> (PSL)
+is a community-curated list of the domain suffixes under which Internet
+users can directly register names. <code>pslr</code> bundles a pinned
+snapshot of that list and implements the official
+<em>prevailing-rule</em> algorithm to answer two core questions about a
+hostname:</p>
+<ul>
+<li><strong>Public suffix</strong> (also called the effective top-level
+domain, <em>eTLD</em>): the suffix below which registrations happen,
+e.g. <code>co.uk</code> for <code>example.co.uk</code>.</li>
+<li><strong>Registrable domain</strong> (<em>eTLD+1</em>): the public
+suffix plus the one label to its left that a registrant actually
+controls, e.g. <code>example.co.uk</code>.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;www.example.co.uk&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;co.uk&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">registrable_domain</span>(<span class="st">&quot;www.example.co.uk&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;example.co.uk&quot;</span></span></code></pre></div>
+<p>The matcher is compiled with <code>cpp11</code> and needs no external
+system library. Hostname canonicalization (case folding and Unicode/IDNA
+handling) is delegated to the <a href="https://CRAN.R-project.org/package=punycoder"><code>punycoder</code></a>
+package.</p>
+</div>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<ul>
+<li><strong>Rule</strong> — a line in the list, such as
+<code>com</code>, <code>*.ck</code>, or <code>!www.ck</code>.</li>
+<li><strong>Normal rule</strong> — a literal suffix (<code>com</code>,
+<code>co.uk</code>).</li>
+<li><strong>Wildcard rule</strong> — <code>*.ck</code> means
+<em>every</em> label directly under <code>ck</code> is itself a public
+suffix.</li>
+<li><strong>Exception rule</strong> — <code>!www.ck</code> carves a
+single name back out of a wildcard.</li>
+<li><strong>Default rule</strong> — the spec’s implicit <code>*</code>:
+any unlisted TLD label is treated as a public suffix.</li>
+<li><strong>Section</strong> — the list is split into an
+<strong>ICANN</strong> part (the official domain hierarchy) and a
+<strong>PRIVATE</strong> part (suffixes operated by companies, e.g.
+<code>github.io</code>).</li>
+</ul>
+<p>The prevailing rule is chosen as: an exception beats a wildcard, the
+longest match beats shorter matches, and the implicit default applies
+only when nothing else does.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;a.b.kobe.jp&quot;</span>) <span class="co"># a wildcard match under kobe.jp</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;b.kobe.jp&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;city.kobe.jp&quot;</span>) <span class="co"># an exception match under kobe.jp</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;kobe.jp&quot;</span></span></code></pre></div>
+</div>
+<div id="choosing-a-section" class="section level2">
+<h2>Choosing a section</h2>
+<p><code>section</code> selects which rules are eligible. Filtering
+happens <em>before</em> prevailing-rule selection, so asking for one
+section never silently borrows a rule from the other.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># github.io is a PRIVATE rule sitting under the ICANN suffix io.</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;user.github.io&quot;</span>, <span class="at">section =</span> <span class="st">&quot;all&quot;</span>) <span class="co"># default scope, both sections</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;github.io&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;user.github.io&quot;</span>, <span class="at">section =</span> <span class="st">&quot;icann&quot;</span>) <span class="co"># the ICANN rule for io</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;io&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;user.github.io&quot;</span>, <span class="at">section =</span> <span class="st">&quot;private&quot;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;github.io&quot;</span></span></code></pre></div>
+<div id="section-private-fall-through" class="section level3">
+<h3><code>section = &quot;private&quot;</code> fall-through</h3>
+<p>When you restrict to a section and the host matches no explicit rule
+there, the query falls through to the implicit default rule rather than
+failing. A plain ICANN host queried under
+<code>section = &quot;private&quot;</code> therefore resolves to its own last
+label via the default rule:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.com&quot;</span>, <span class="at">section =</span> <span class="st">&quot;private&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;com&quot;</span></span></code></pre></div>
+<p>To distinguish “no explicit rule matched” from a real match, combine
+the section with <code>unknown = &quot;na&quot;</code> (below).</p>
+</div>
+</div>
+<div id="unknown-suffix-policy" class="section level2">
+<h2>Unknown-suffix policy</h2>
+<p>By default an unlisted suffix is handled by the implicit
+<code>*</code> rule, so a made-up TLD still yields a public suffix. Pass
+<code>unknown = &quot;na&quot;</code> to require an <em>explicit</em> rule and get
+<code>NA</code> otherwise.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.madeuptld&quot;</span>) <span class="co"># default rule</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;madeuptld&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.madeuptld&quot;</span>, <span class="at">unknown =</span> <span class="st">&quot;na&quot;</span>) <span class="co"># explicit-only</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div>
+<div id="explicit-membership-queries" class="section level3">
+<h3>Explicit-membership queries</h3>
+<p><code>is_public_suffix()</code> reports whether a host is itself a
+public suffix. Under the default policy an unlisted single label is
+<code>TRUE</code> via the implicit rule; use <code>unknown = &quot;na&quot;</code>
+to test explicit list membership instead.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">is_public_suffix</span>(<span class="st">&quot;co.uk&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">is_public_suffix</span>(<span class="st">&quot;madeuptld&quot;</span>) <span class="co"># TRUE via the implicit default rule</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">is_public_suffix</span>(<span class="st">&quot;madeuptld&quot;</span>, <span class="at">unknown =</span> <span class="st">&quot;na&quot;</span>) <span class="co"># explicit membership only</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div>
+</div>
+</div>
+<div id="unicode-and-ascii-output" class="section level2">
+<h2>Unicode and ASCII output</h2>
+<p>Input may be ASCII, Unicode, or A-label (<code>xn--</code>)
+hostnames; equivalent spellings canonicalize to the same answer. Output
+is ASCII A-labels by default; pass <code>output = &quot;unicode&quot;</code> to
+decode them.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.рф&quot;</span>) <span class="co"># ASCII A-label by default</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;xn--p1ai&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.рф&quot;</span>, <span class="at">output =</span> <span class="st">&quot;unicode&quot;</span>) <span class="co"># decoded to Unicode</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;рф&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.xn--p1ai&quot;</span>) <span class="co"># the A-label spelling agrees</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;xn--p1ai&quot;</span></span></code></pre></div>
+</div>
+<div id="terminal-dots" class="section level2">
+<h2>Terminal dots</h2>
+<p>A single terminal root dot is preserved on hostname-shaped output, so
+a fully-qualified name round-trips:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;www.example.com.&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;com.&quot;</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">registrable_domain</span>(<span class="st">&quot;www.example.com.&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;example.com.&quot;</span></span></code></pre></div>
+</div>
+<div id="extracting-and-inspecting" class="section level2">
+<h2>Extracting and inspecting</h2>
+<p><code>suffix_extract()</code> splits each host into subdomain,
+registrant label, and suffix; <code>public_suffix_rule()</code> reports
+which rule prevailed, useful for auditing.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">suffix_extract</span>(<span class="st">&quot;blog.user.github.io&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt;                 input                host subdomain domain    suffix</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; 1 blog.user.github.io blog.user.github.io      blog   user github.io</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;   registrable_domain</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1     user.github.io</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="fu">public_suffix_rule</span>(<span class="fu">c</span>(<span class="st">&quot;www.ck&quot;</span>, <span class="st">&quot;a.b.kobe.jp&quot;</span>, <span class="st">&quot;example.madeuptld&quot;</span>))</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;               input        host_ascii      rule      kind rule_section</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; 1            www.ck            www.ck   !www.ck exception        icann</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; 2       a.b.kobe.jp       a.b.kobe.jp *.kobe.jp  wildcard        icann</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 3 example.madeuptld example.madeuptld         *   default         &lt;NA&gt;</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;   public_suffix_ascii</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 1                  ck</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 2           b.kobe.jp</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; 3           madeuptld</span></span></code></pre></div>
+<p>All query functions are vectorized, length- and name-preserving, and
+NA-safe. Invalid input (URLs, IPv6, empty labels, dotted-decimal IPv4
+literals, …) is <code>NA</code> by default; pass
+<code>invalid = &quot;error&quot;</code> to abort on the first invalid
+element.</p>
+</div>
+<div id="refresh-and-the-active-list" class="section level2">
+<h2>Refresh and the active list</h2>
+<p>The package ships with a pinned snapshot, so it works fully offline
+and the bundled list is the default for every query.
+<code>psl_refresh()</code> is the <em>only</em> function that touches
+the network: an explicit, HTTPS-only, validated download into a user
+cache. <code>psl_use()</code> chooses which list backs the session.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Revalidate against upstream, publish any changed bytes, and activate them:</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">psl_refresh</span>(<span class="at">activate =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co"># Switch the active list for this session:</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">psl_use</span>(<span class="st">&quot;cache&quot;</span>) <span class="co"># the snapshot the last refresh selected</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="fu">psl_use</span>(<span class="st">&quot;bundled&quot;</span>) <span class="co"># back to the shipped snapshot</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="fu">psl_use</span>(<span class="st">&quot;path&quot;</span>, <span class="at">path =</span> <span class="st">&quot;my_list.dat&quot;</span>) <span class="co"># a custom file</span></span></code></pre></div>
+<p><code>activate</code> and <code>force</code> are named-only
+arguments. Both are logical and both mean “do more than a bare check”,
+so <code>psl_refresh(url, TRUE)</code> would be unreadable whichever one
+it meant; naming them makes every call say what it does.</p>
+<p>Activation is session-only and validated before any state changes; a
+failed refresh never replaces a working cache or active list.</p>
+</div>
+<div id="freshness-what-is-known-versus-what-is-merely-due" class="section level2">
+<h2>Freshness: what is known versus what is merely due</h2>
+<p>The upstream list keeps changing, so sooner or later you will want to
+know how current the list answering your queries actually is.
+<code>pslr</code> answers that with evidence, not with arithmetic on a
+date.</p>
+<p><code>psl_status()</code> is the offline read. It makes no request,
+writes nothing, and reports the strongest claim the locally stored
+evidence supports:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">psl_status</span>() <span class="co"># the list active in this session</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; &lt;psl_status: never_checked&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;   Never checked against its source.</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt;   No successful check has confirmed these bytes against the source. Run</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt;   psl_refresh() to check.</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt;   snapshot:     active (bundled)</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;   checksum:     sha256:00dda6fa8406...</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;   source:       https://publicsuffix.org/list/public_suffix_list.dat</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;   content date: 2026-09-05 14:17 UTC</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;   retrieved:    2026-10-05 08:46 UTC</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="fu">psl_status</span>(<span class="st">&quot;bundled&quot;</span>)<span class="sc">$</span>state <span class="co"># the snapshot installed with the package</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;never_checked&quot;</span></span></code></pre></div>
+<p>Its <code>state</code>, in precedence order:</p>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>missing</code></td>
+<td>The requested cache selection does not exist.</td>
+</tr>
+<tr class="even">
+<td><code>unknown</code></td>
+<td>Local state is corrupt or ambiguous, or the clock moved
+backwards.</td>
+</tr>
+<tr class="odd">
+<td><code>untracked</code></td>
+<td>The snapshot has no remote source, so no claim is possible — a
+custom file, say.</td>
+</tr>
+<tr class="even">
+<td><code>update_available</code></td>
+<td>A successful earlier check <em>observed</em> a different checksum
+for the source.</td>
+</tr>
+<tr class="odd">
+<td><code>never_checked</code></td>
+<td>The source is known, but nothing has ever confirmed this snapshot
+against it.</td>
+</tr>
+<tr class="even">
+<td><code>check_due</code></td>
+<td>The snapshot was confirmed current, and the reminder interval has
+since elapsed.</td>
+</tr>
+<tr class="odd">
+<td><code>confirmed_current</code></td>
+<td>Confirmed current, and the interval has not elapsed.</td>
+</tr>
+</tbody>
+</table>
+<div id="why-check-due-is-not-update-available" class="section level3">
+<h3>Why “check due” is not “update available”</h3>
+<p>These are different kinds of statement, and conflating them is the
+mistake this design exists to avoid.</p>
+<p><code>check_due</code> is about <em>your</em> knowledge: some days
+have passed since anything last confirmed this snapshot, so a check is
+worth making. It says nothing whatsoever about upstream. The list may
+not have changed in months.</p>
+<p><code>update_available</code> is about <em>upstream</em>: a check
+actually ran, and the source reported a checksum that differs from the
+snapshot you are looking at. That is an observation, and
+<code>pslr</code> will only ever make it after a real check.</p>
+<p>Elapsed time alone therefore never produces
+<code>update_available</code>. A year-old snapshot that nobody has
+checked is <code>never_checked</code>, not “outdated” — because nothing
+in the local state knows whether it is out of date. (This is why the old
+<code>psl_outdated()</code> was removed: a Boolean derived from the list
+date could only ever answer the age question while sounding like it
+answered the upstream one.)</p>
+</div>
+<div id="etag-and-last-modified-versus-sha-256" class="section level3">
+<h3>ETag and Last-Modified versus SHA-256</h3>
+<p>Two different identifiers do two different jobs, and they are not
+interchangeable.</p>
+<p>A <strong>SHA-256 checksum</strong> identifies bytes.
+<code>pslr</code> computes it over the exact source bytes of every
+snapshot, and it is the package’s own, verifiable answer to “are these
+the same list?” Two snapshots with the same SHA-256 are the same list; a
+stored file whose bytes no longer hash to its name is corrupt. Checksums
+are computed locally, so nothing upstream has to be trusted for them to
+mean something.</p>
+<p>An <strong>ETag</strong> or <strong>Last-Modified</strong> value is
+an opaque token the <em>server</em> issues for one URL.
+<code>pslr</code> stores it and sends it back on the next check, which
+lets the server answer <code>304 Not Modified</code> and skip resending
+a list that has not changed — a courtesy to publicsuffix.org and a
+saving for you. But a validator proves nothing about content: it is
+scoped to the server that issued it, it can change while the bytes do
+not, and it is never used as an integrity or authenticity check.
+Downloaded bytes are always hashed and fully validated on their own
+merits.</p>
+</div>
+<div id="the-four-successful-refresh-outcomes" class="section level3">
+<h3>The four successful refresh outcomes</h3>
+<p>A successful <code>psl_refresh()</code> returns invisibly with
+exactly one outcome:</p>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="28%" />
+<col width="28%" />
+<col width="21%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Outcome</th>
+<th align="center">Requests</th>
+<th align="center">Body</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>skipped_recently</code></td>
+<td align="center">0</td>
+<td align="center">no</td>
+<td>The last successful check is still inside its courtesy window.</td>
+</tr>
+<tr class="even">
+<td><code>not_modified</code></td>
+<td align="center">1</td>
+<td align="center">no</td>
+<td>The conditional request answered <code>304</code>; local bytes were
+verified and stand.</td>
+</tr>
+<tr class="odd">
+<td><code>updated</code></td>
+<td align="center">1</td>
+<td align="center">yes</td>
+<td>A <code>200</code> whose validated bytes are a new snapshot.</td>
+</tr>
+<tr class="even">
+<td><code>downloaded_unchanged</code></td>
+<td align="center">1</td>
+<td align="center">yes</td>
+<td>A <code>200</code> whose validated bytes hash to the snapshot
+already held.</td>
+</tr>
+</tbody>
+</table>
+<p><code>downloaded_unchanged</code> is the honest name for the case
+where no validator was usable, so the list had to be fetched to find out
+that it was identical.</p>
+<p>Anything that is not one of those four is a failure, and failures are
+classed errors rooted at <code>pslr_refresh_error</code> — never a
+success-shaped result. A failed refresh leaves the cache, the selected
+snapshot, and the active matcher exactly as they were.</p>
+</div>
+<div id="courtesy-no-more-than-daily" class="section level3">
+<h3>Courtesy: no more than daily</h3>
+<p>The Public Suffix List asks clients to download it no more than once
+a day. An ordinary <code>psl_refresh()</code> therefore makes no request
+at all while the last successful check is inside a courtesy window of at
+least 24 hours; it returns <code>skipped_recently</code> without
+touching the network. If the server advertises longer freshness, the
+window follows it, up to a 30-day cap.</p>
+<p><code>force = TRUE</code> bypasses that local window and nothing
+else. It is not an unconditional download: the request it makes still
+carries a validator when one is available, so upstream can still answer
+<code>304</code>.</p>
+</div>
+<div id="opt-in-reminders" class="section level3">
+<h3>Opt-in reminders</h3>
+<p>Reminders are off until you turn them on, and they never make a
+request. When enabled, a direct <code>library(pslr)</code> prints at
+most one startup message per R session, and only for the three states
+where local evidence supports advice: <code>never_checked</code>,
+<code>check_due</code>, and <code>update_available</code>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">psl_reminder</span>(<span class="at">enable =</span> <span class="cn">TRUE</span>) <span class="co"># weekly by default</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">psl_reminder</span>(<span class="at">enable =</span> <span class="cn">TRUE</span>, <span class="at">every =</span> <span class="dv">30</span>) <span class="co"># or a month</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="fu">psl_reminder</span>(<span class="at">enable =</span> <span class="cn">FALSE</span>) <span class="co"># off; the interval is remembered</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="fu">psl_reminder</span>() <span class="co"># just query, writes nothing</span></span></code></pre></div>
+<p>The preference is configuration rather than cache: it lives under
+<code>tools::R_user_dir(&quot;pslr&quot;, &quot;config&quot;)</code>, so refreshing,
+pruning, or deleting the snapshot cache never changes it.
+<code>suppressPackageStartupMessages()</code> silences the message as
+usual, and a package that merely imports the namespace never triggers
+it.</p>
+<p>Note that a reminder is a prompt to <em>check</em>, not a claim that
+something changed — with the one exception of
+<code>update_available</code>, where the newer snapshot is already
+stored locally and the message suggests activating it with
+<code>psl_use(&quot;cache&quot;)</code> rather than downloading anything
+again.</p>
+</div>
+<div id="refreshing-on-a-schedule" class="section level3">
+<h3>Refreshing on a schedule</h3>
+<p><code>pslr</code> installs no scheduler, runs no daemon, and starts
+no background request. If you want a daily or weekly refresh, drive it
+from a scheduler you already have, with a one-line script:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># refresh-psl.R</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>pslr<span class="sc">::</span><span class="fu">psl_refresh</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># cron: every day at 04:30</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="ex">30</span> 4 <span class="pp">*</span> <span class="pp">*</span> <span class="pp">*</span> Rscript /path/to/refresh-psl.R</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co"># or a weekly GitHub Actions / systemd timer / Task Scheduler entry</span></span></code></pre></div>
+<p>Because <code>psl_refresh()</code> enforces the courtesy window
+itself, over-scheduling is harmless: extra runs return
+<code>skipped_recently</code> without making a request. Nothing is
+activated unless you pass <code>activate = TRUE</code>, so a scheduled
+refresh stages new bytes and leaves it to the next session to pick them
+up.</p>
+</div>
+<div id="snapshots-retention-and-pruning" class="section level3">
+<h3>Snapshots, retention, and pruning</h3>
+<p>Every distinct validated download is preserved by its checksum until
+you explicitly remove it. <code>psl_snapshots()</code> lists what this
+installation can resolve — one row per distinct SHA-256, so bytes stored
+twice collapse into one row:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>snapshots <span class="ot">&lt;-</span> <span class="fu">psl_snapshots</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>snapshots[<span class="fu">c</span>(<span class="st">&quot;checksum&quot;</span>, <span class="st">&quot;bundled&quot;</span>, <span class="st">&quot;size&quot;</span>, <span class="st">&quot;integrity&quot;</span>)]</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt;                                                                  checksum</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; 1 sha256:00dda6fa84060cca59415b5ba30bbe9d6700deb78d177f59fc83673531e30099</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt;   bundled   size integrity</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; 1    TRUE 335611        ok</span></span></code></pre></div>
+<p><code>psl_cache_prune()</code> is the explicit, offline, destructive
+counterpart. It protects the selected cache snapshot, every snapshot any
+source record still names, the snapshot active in this session, and the
+<code>keep</code> most recently retrieved snapshots beyond those:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">psl_cache_prune</span>() <span class="co"># referenced snapshots, plus one more</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">psl_cache_prune</span>(<span class="at">keep =</span> <span class="dv">0</span>) <span class="co"># referenced snapshots only</span></span></code></pre></div>
+<p>Keeping history is not an accident: stable checksums are the seam
+<code>psl_diff()</code> needs to say what changed between two snapshots.
+Pruning to <code>keep = 0</code> gives that up in exchange for disk.</p>
+</div>
+<div id="comparing-two-snapshots" class="section level3">
+<h3>Comparing two snapshots</h3>
+<p><code>psl_diff(old, new)</code> reports which rules were added,
+removed, or changed between two snapshots — offline, from bytes already
+on this machine. The usual comparison is the snapshot you installed
+against one you have since retrieved:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># After at least one psl_refresh(), the cache selection is a second snapshot:</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>changes <span class="ot">&lt;-</span> <span class="fu">psl_diff</span>(<span class="st">&quot;bundled&quot;</span>, <span class="st">&quot;cache&quot;</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">table</span>(changes<span class="sc">$</span>change)</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="fu">head</span>(changes)</span></code></pre></div>
+<p>That works only once local collection has started. Installing pslr
+makes no request and gives you exactly one snapshot: the bundled one.
+The first explicit <code>psl_refresh()</code> is what begins the history
+— from then on every distinct validated download is retained by checksum
+until you prune it, and each retained file is a valid <code>old</code>
+or <code>new</code>. Any path from <code>psl_snapshots()</code> can be
+passed directly, as can a historical revision you materialized as a file
+by other means; <code>psl_diff()</code> resolves no dates and downloads
+nothing.</p>
+<p>Either side also accepts a source-file path, a
+<code>psl_engine()</code>, or a <code>psl_rules()</code>-shaped table,
+which is enough to see the semantics without a cache:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>write_list <span class="ot">&lt;-</span> <span class="cf">function</span>(private) {</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  path <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.dat&quot;</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="fu">writeLines</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>    <span class="fu">c</span>(</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>      <span class="st">&quot;// ===BEGIN ICANN DOMAINS===&quot;</span>,</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>      <span class="st">&quot;com&quot;</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>      <span class="st">&quot;// ===END ICANN DOMAINS===&quot;</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>      <span class="st">&quot;// ===BEGIN PRIVATE DOMAINS===&quot;</span>,</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>      private,</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>      <span class="st">&quot;// ===END PRIVATE DOMAINS===&quot;</span></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>    ),</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>    path</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>  )</span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>  path</span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>}</span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a><span class="fu">psl_diff</span>(</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>  <span class="fu">write_list</span>(<span class="fu">c</span>(<span class="st">&quot;a.example.com&quot;</span>, <span class="st">&quot;*.b.example.com&quot;</span>)),</span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>  <span class="fu">write_list</span>(<span class="fu">c</span>(<span class="st">&quot;b.example.com&quot;</span>, <span class="st">&quot;c.example.com&quot;</span>))</span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>)</span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a><span class="co">#&gt;    change          rule        old_rule      new_rule old_kind new_kind</span></span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="co">#&gt; 1 removed a.example.com   a.example.com          &lt;NA&gt;   normal     &lt;NA&gt;</span></span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a><span class="co">#&gt; 2 changed b.example.com *.b.example.com b.example.com wildcard   normal</span></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a><span class="co">#&gt; 3   added c.example.com            &lt;NA&gt; c.example.com     &lt;NA&gt;   normal</span></span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a><span class="co">#&gt;   old_section new_section</span></span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a><span class="co">#&gt; 1     private        &lt;NA&gt;</span></span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a><span class="co">#&gt; 2     private     private</span></span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a><span class="co">#&gt; 3        &lt;NA&gt;     private</span></span></code></pre></div>
+<p>A row is keyed on a rule’s <em>logical identity</em> — its canonical
+labels with any leading <code>*.</code> or <code>!</code> removed — so
+<code>*.b.example.com</code> becoming <code>b.example.com</code> is one
+<code>changed</code> row rather than an unrelated removal and addition.
+A rule moving between the ICANN and PRIVATE sections is
+<code>changed</code> for the same reason. The comparison happens after
+parsing and canonicalization, so comments, blank lines, whitespace,
+letter case, source ordering, and raw Unicode spelling never appear as
+changes. Two snapshots that agree return the same columns with zero
+rows.</p>
+<p><code>psl_diff()</code> never activates anything: both sides resolve
+independently, and the session-global list keeps answering from whatever
+<code>psl_use()</code> last selected. Provenance travels with the result
+as attributes, so a diff can be filed alongside the identities it
+compared:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">psl_diff</span>(<span class="st">&quot;bundled&quot;</span>, <span class="st">&quot;bundled&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">attr</span>(d, <span class="st">&quot;old_version&quot;</span>)[<span class="fu">c</span>(<span class="st">&quot;source&quot;</span>, <span class="st">&quot;checksum&quot;</span>)]</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt;    source</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; 1 bundled</span></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co">#&gt;                                                                  checksum</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="co">#&gt; 1 sha256:00dda6fa84060cca59415b5ba30bbe9d6700deb78d177f59fc83673531e30099</span></span></code></pre></div>
+</div>
+</div>
+<div id="multiple-lists-with-engines" class="section level2">
+<h2>Multiple lists with engines</h2>
+<p><code>psl_use()</code> switches the one session-global list every
+query sees by default. <code>psl_engine()</code> instead builds a
+self-contained engine you can hold in a variable and query independently
+— so you can work with several lists at once, or give a component its
+own list, without mutating global session state. Every query function
+takes an <code>engine =</code> argument that threads a specific engine
+through that one call.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>engine <span class="ot">&lt;-</span> <span class="fu">psl_engine</span>(<span class="st">&quot;bundled&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="fu">public_suffix</span>(<span class="st">&quot;example.co.uk&quot;</span>, <span class="at">engine =</span> engine)</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;co.uk&quot;</span></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="fu">suffix_extract</span>(<span class="st">&quot;www.example.co.uk&quot;</span>, <span class="at">engine =</span> engine)</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co">#&gt;               input              host subdomain  domain suffix</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="co">#&gt; 1 www.example.co.uk www.example.co.uk       www example  co.uk</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="co">#&gt;   registrable_domain</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a><span class="co">#&gt; 1      example.co.uk</span></span></code></pre></div>
+<p>An engine holds a compiled matcher backed by a C++ external pointer,
+which does not serialize across R sessions or parallel worker processes:
+saving and reloading an engine, or sending one to a worker, does not
+carry the matcher. This is why engines are described as process-local.
+To persist or ship an engine, record its snapshot descriptor with
+<code>psl_version()</code> and rebuild the engine in the target
+process:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co"># In the target process, rebuild from a recorded snapshot file:</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>engine <span class="ot">&lt;-</span> <span class="fu">psl_engine</span>(<span class="st">&quot;path&quot;</span>, <span class="at">path =</span> <span class="st">&quot;my_list.dat&quot;</span>)</span></code></pre></div>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<p>A public-suffix result depends on both <em>which list</em> answered
+and <em>how hosts were normalized</em>. <code>psl_version()</code>
+reports both — the source-snapshot provenance and the runtime
+normalization identifiers — so a result can be reproduced later. Record
+this row alongside reproducibility-sensitive output.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">psl_version</span>()</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="co">#&gt;    source</span></span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="co">#&gt; 1 bundled</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="co">#&gt;                                                                                                                   url</span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="co">#&gt; 1 https://raw.githubusercontent.com/publicsuffix/list/46ae48ceff01716409d78d38c2bbb36489cce68e/public_suffix_list.dat</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a><span class="co">#&gt;   path            retrieved_at            list_date</span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a><span class="co">#&gt; 1 &lt;NA&gt; 2026-10-05 08:46:39 UTC 2026-09-05T14:17:12Z</span></span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a><span class="co">#&gt;                                     commit   size</span></span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a><span class="co">#&gt; 1 46ae48ceff01716409d78d38c2bbb36489cce68e 335611</span></span>
+<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a><span class="co">#&gt;                                                                  checksum</span></span>
+<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a><span class="co">#&gt; 1 sha256:00dda6fa84060cca59415b5ba30bbe9d6700deb78d177f59fc83673531e30099</span></span>
+<span id="cb23-12"><a href="#cb23-12" tabindex="-1"></a><span class="co">#&gt;   normalizer normalizer_version         normalization_profile unicode_version</span></span>
+<span id="cb23-13"><a href="#cb23-13" tabindex="-1"></a><span class="co">#&gt; 1  punycoder              1.3.0 uts46-nontransitional-std3-v2          17.0.0</span></span></code></pre></div>
+<p><code>psl_rules()</code> exposes the active rule table itself:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">nrow</span>(<span class="fu">psl_rules</span>(<span class="st">&quot;icann&quot;</span>))</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="co">#&gt; [1] 6950</span></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">psl_rules</span>(<span class="st">&quot;private&quot;</span>), <span class="dv">3</span>)</span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="co">#&gt;      rule canonical_rule   kind section labels</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="co">#&gt; 1  co.krd         co.krd normal private      2</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a><span class="co">#&gt; 2 edu.krd        edu.krd normal private      2</span></span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a><span class="co">#&gt; 3  art.pl         art.pl normal private      2</span></span></code></pre></div>
+<p>If the shipped index was generated under a different normalization
+profile or Unicode version than the installed <code>punycoder</code>,
+the list is transparently rebuilt in memory from source on activation,
+so an index is never mixed with hosts normalized under a different
+profile.</p>
+</div>
+<div id="security-and-scope-notes" class="section level2">
+<h2>Security and scope notes</h2>
+<ul>
+<li><strong>Hostnames, not URLs.</strong> The query functions accept DNS
+hostnames. URL-shaped input is rejected as invalid; parse the host out
+of a URL first.</li>
+<li><strong>Explicit network only.</strong> Nothing in package load,
+queries, status, snapshot inventory, reminders, pruning, examples, or
+tests touches the network. Only <code>psl_refresh()</code> does, and
+only when you call it. It is HTTPS-only, rejects embedded credentials,
+query strings, and downgrade or cross-origin redirects, and enforces a
+source-size ceiling.</li>
+<li><strong>Stored URLs stay private.</strong> Source identity is stored
+under a digest of the request URL rather than under the URL text, and
+<code>psl_snapshots()</code> reports only how <em>many</em> sources
+reference a snapshot, never which.</li>
+<li><strong>The PSL is advisory.</strong> It is a best-effort community
+list, not an authoritative statement of ownership or a security boundary
+by itself. Treat a registrable-domain result as a heuristic for
+grouping, not proof of control.</li>
+<li><strong>Session-global active list.</strong> The active list is
+per-session global state; there is no per-call list switching.
+Concurrent per-list queries are out of scope for this release.</li>
+</ul>
+</div>
+<div id="see-also" class="section level2">
+<h2>See also</h2>
+<p><code>pslr</code> is part of a small ecosystem of R packages by the
+same author:</p>
+<ul>
+<li><strong><a href="https://CRAN.R-project.org/package=punycoder">punycoder</a></strong>
+— the Punycode and IDNA codec that <code>pslr</code> uses for host
+canonicalization. Use it directly for raw Unicode ↔︎ ACE round-trips
+outside the PSL context.</li>
+<li><strong><a href="https://CRAN.R-project.org/package=rurl">rurl</a></strong> — full
+URL parsing, normalization, cleaning, and joining toolkit that uses
+<code>pslr</code> as its PSL engine. Reach for it when you need to work
+with complete URLs rather than bare hostnames.</li>
+</ul>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p><code>pslr</code> serves the <a href="https://publicsuffix.org">Public Suffix List</a>, maintained by
+Mozilla and the wider community under the Mozilla Public License 2.0,
+and delegates host normalization (UTS #46 / IDNA) to the sibling
+<code>punycoder</code> package. Its matcher is built on
+<code>cpp11</code>.</p>
+<p>The full list of credits — prior art, dependencies, the standards
+this code implements, and the data sources it serves — is in <a href="https://gitlab.com/bart-turczynski/pslr/-/blob/main/ACKNOWLEDGMENTS.md"><code>ACKNOWLEDGMENTS.md</code></a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

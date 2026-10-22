@@ -1,0 +1,504 @@
+---
+title: "Introduction to pslr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to pslr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(pslr)
+```
+
+## What pslr does
+
+The [Public Suffix List](https://publicsuffix.org) (PSL) is a community-curated
+list of the domain suffixes under which Internet users can directly register
+names. `pslr` bundles a pinned snapshot of that list and implements the
+official *prevailing-rule* algorithm to answer two core questions about a
+hostname:
+
+* **Public suffix** (also called the effective top-level domain, *eTLD*): the
+  suffix below which registrations happen, e.g. `co.uk` for `example.co.uk`.
+* **Registrable domain** (*eTLD+1*): the public suffix plus the one label to its
+  left that a registrant actually controls, e.g. `example.co.uk`.
+
+```{r}
+public_suffix("www.example.co.uk")
+registrable_domain("www.example.co.uk")
+```
+
+The matcher is compiled with `cpp11` and needs no external system library.
+Hostname canonicalization (case folding and Unicode/IDNA handling) is delegated
+to the [`punycoder`](https://CRAN.R-project.org/package=punycoder) package.
+
+## Terminology
+
+* **Rule** — a line in the list, such as `com`, `*.ck`, or `!www.ck`.
+* **Normal rule** — a literal suffix (`com`, `co.uk`).
+* **Wildcard rule** — `*.ck` means *every* label directly under `ck` is itself a
+  public suffix.
+* **Exception rule** — `!www.ck` carves a single name back out of a wildcard.
+* **Default rule** — the spec's implicit `*`: any unlisted TLD label is treated
+  as a public suffix.
+* **Section** — the list is split into an **ICANN** part (the official domain
+  hierarchy) and a **PRIVATE** part (suffixes operated by companies, e.g.
+  `github.io`).
+
+The prevailing rule is chosen as: an exception beats a wildcard, the longest
+match beats shorter matches, and the implicit default applies only when nothing
+else does.
+
+```{r}
+public_suffix("a.b.kobe.jp") # a wildcard match under kobe.jp
+public_suffix("city.kobe.jp") # an exception match under kobe.jp
+```
+
+## Choosing a section
+
+`section` selects which rules are eligible. Filtering happens *before*
+prevailing-rule selection, so asking for one section never silently borrows a
+rule from the other.
+
+```{r}
+# github.io is a PRIVATE rule sitting under the ICANN suffix io.
+public_suffix("user.github.io", section = "all") # default scope, both sections
+public_suffix("user.github.io", section = "icann") # the ICANN rule for io
+public_suffix("user.github.io", section = "private")
+```
+
+### `section = "private"` fall-through
+
+When you restrict to a section and the host matches no explicit rule there, the
+query falls through to the implicit default rule rather than failing. A plain
+ICANN host queried under `section = "private"` therefore resolves to its own
+last label via the default rule:
+
+```{r}
+public_suffix("example.com", section = "private")
+```
+
+To distinguish "no explicit rule matched" from a real match, combine the section
+with `unknown = "na"` (below).
+
+## Unknown-suffix policy
+
+By default an unlisted suffix is handled by the implicit `*` rule, so a made-up
+TLD still yields a public suffix. Pass `unknown = "na"` to require an *explicit*
+rule and get `NA` otherwise.
+
+```{r}
+public_suffix("example.madeuptld") # default rule
+public_suffix("example.madeuptld", unknown = "na") # explicit-only
+```
+
+### Explicit-membership queries
+
+`is_public_suffix()` reports whether a host is itself a public suffix. Under the
+default policy an unlisted single label is `TRUE` via the implicit rule; use
+`unknown = "na"` to test explicit list membership instead.
+
+```{r}
+is_public_suffix("co.uk")
+is_public_suffix("madeuptld") # TRUE via the implicit default rule
+is_public_suffix("madeuptld", unknown = "na") # explicit membership only
+```
+
+## Unicode and ASCII output
+
+Input may be ASCII, Unicode, or A-label (`xn--`) hostnames; equivalent spellings
+canonicalize to the same answer. Output is ASCII A-labels by default; pass
+`output = "unicode"` to decode them.
+
+```{r}
+public_suffix("example.рф") # ASCII A-label by default
+public_suffix("example.рф", output = "unicode") # decoded to Unicode
+public_suffix("example.xn--p1ai") # the A-label spelling agrees
+```
+
+## Terminal dots
+
+A single terminal root dot is preserved on hostname-shaped output, so a
+fully-qualified name round-trips:
+
+```{r}
+public_suffix("www.example.com.")
+registrable_domain("www.example.com.")
+```
+
+## Extracting and inspecting
+
+`suffix_extract()` splits each host into subdomain, registrant label, and
+suffix; `public_suffix_rule()` reports which rule prevailed, useful for auditing.
+
+```{r}
+suffix_extract("blog.user.github.io")
+public_suffix_rule(c("www.ck", "a.b.kobe.jp", "example.madeuptld"))
+```
+
+All query functions are vectorized, length- and name-preserving, and NA-safe.
+Invalid input (URLs, IPv6, empty labels, dotted-decimal IPv4 literals, ...) is
+`NA` by default; pass `invalid = "error"` to abort on the first invalid element.
+
+## Refresh and the active list
+
+The package ships with a pinned snapshot, so it works fully offline and the
+bundled list is the default for every query. `psl_refresh()` is the *only*
+function that touches the network: an explicit, HTTPS-only, validated download
+into a user cache. `psl_use()` chooses which list backs the session.
+
+```{r, eval = FALSE}
+# Revalidate against upstream, publish any changed bytes, and activate them:
+psl_refresh(activate = TRUE)
+
+# Switch the active list for this session:
+psl_use("cache") # the snapshot the last refresh selected
+psl_use("bundled") # back to the shipped snapshot
+psl_use("path", path = "my_list.dat") # a custom file
+```
+
+`activate` and `force` are named-only arguments. Both are logical and both mean
+"do more than a bare check", so `psl_refresh(url, TRUE)` would be unreadable
+whichever one it meant; naming them makes every call say what it does.
+
+Activation is session-only and validated before any state changes; a failed
+refresh never replaces a working cache or active list.
+
+## Freshness: what is known versus what is merely due
+
+The upstream list keeps changing, so sooner or later you will want to know how
+current the list answering your queries actually is. `pslr` answers that with
+evidence, not with arithmetic on a date.
+
+`psl_status()` is the offline read. It makes no request, writes nothing, and
+reports the strongest claim the locally stored evidence supports:
+
+```{r freshness-setup, include = FALSE}
+# Build this vignette against an empty snapshot cache, so its output describes
+# a fresh installation rather than whatever the building machine refreshed.
+options(
+  pslr.cache_dir = file.path(tempdir(), "pslr-vignette-cache"),
+  pslr.config_dir = file.path(tempdir(), "pslr-vignette-config")
+)
+```
+
+```{r}
+psl_status() # the list active in this session
+psl_status("bundled")$state # the snapshot installed with the package
+```
+
+Its `state`, in precedence order:
+
+| State | Meaning |
+|---|---|
+| `missing` | The requested cache selection does not exist. |
+| `unknown` | Local state is corrupt or ambiguous, or the clock moved backwards. |
+| `untracked` | The snapshot has no remote source, so no claim is possible — a custom file, say. |
+| `update_available` | A successful earlier check *observed* a different checksum for the source. |
+| `never_checked` | The source is known, but nothing has ever confirmed this snapshot against it. |
+| `check_due` | The snapshot was confirmed current, and the reminder interval has since elapsed. |
+| `confirmed_current` | Confirmed current, and the interval has not elapsed. |
+
+### Why "check due" is not "update available"
+
+These are different kinds of statement, and conflating them is the mistake this
+design exists to avoid.
+
+`check_due` is about *your* knowledge: some days have passed since anything last
+confirmed this snapshot, so a check is worth making. It says nothing whatsoever
+about upstream. The list may not have changed in months.
+
+`update_available` is about *upstream*: a check actually ran, and the source
+reported a checksum that differs from the snapshot you are looking at. That is
+an observation, and `pslr` will only ever make it after a real check.
+
+Elapsed time alone therefore never produces `update_available`. A year-old
+snapshot that nobody has checked is `never_checked`, not "outdated" — because
+nothing in the local state knows whether it is out of date. (This is why the old
+`psl_outdated()` was removed: a Boolean derived from the list date could only
+ever answer the age question while sounding like it answered the upstream one.)
+
+### ETag and Last-Modified versus SHA-256
+
+Two different identifiers do two different jobs, and they are not
+interchangeable.
+
+A **SHA-256 checksum** identifies bytes. `pslr` computes it over the exact
+source bytes of every snapshot, and it is the package's own, verifiable answer
+to "are these the same list?" Two snapshots with the same SHA-256 are the same
+list; a stored file whose bytes no longer hash to its name is corrupt. Checksums
+are computed locally, so nothing upstream has to be trusted for them to mean
+something.
+
+An **ETag** or **Last-Modified** value is an opaque token the *server* issues
+for one URL. `pslr` stores it and sends it back on the next check, which lets
+the server answer `304 Not Modified` and skip resending a list that has not
+changed — a courtesy to publicsuffix.org and a saving for you. But a validator
+proves nothing about content: it is scoped to the server that issued it, it can
+change while the bytes do not, and it is never used as an integrity or
+authenticity check. Downloaded bytes are always hashed and fully validated on
+their own merits.
+
+### The four successful refresh outcomes
+
+A successful `psl_refresh()` returns invisibly with exactly one outcome:
+
+| Outcome | Requests | Body | Meaning |
+|---|:--:|:--:|---|
+| `skipped_recently` | 0 | no | The last successful check is still inside its courtesy window. |
+| `not_modified` | 1 | no | The conditional request answered `304`; local bytes were verified and stand. |
+| `updated` | 1 | yes | A `200` whose validated bytes are a new snapshot. |
+| `downloaded_unchanged` | 1 | yes | A `200` whose validated bytes hash to the snapshot already held. |
+
+`downloaded_unchanged` is the honest name for the case where no validator was
+usable, so the list had to be fetched to find out that it was identical.
+
+Anything that is not one of those four is a failure, and failures are classed
+errors rooted at `pslr_refresh_error` — never a success-shaped result. A failed
+refresh leaves the cache, the selected snapshot, and the active matcher exactly
+as they were.
+
+### Courtesy: no more than daily
+
+The Public Suffix List asks clients to download it no more than once a day. An
+ordinary `psl_refresh()` therefore makes no request at all while the last
+successful check is inside a courtesy window of at least 24 hours; it returns
+`skipped_recently` without touching the network. If the server advertises longer
+freshness, the window follows it, up to a 30-day cap.
+
+`force = TRUE` bypasses that local window and nothing else. It is not an
+unconditional download: the request it makes still carries a validator when one
+is available, so upstream can still answer `304`.
+
+### Opt-in reminders
+
+Reminders are off until you turn them on, and they never make a request. When
+enabled, a direct `library(pslr)` prints at most one startup message per R
+session, and only for the three states where local evidence supports advice:
+`never_checked`, `check_due`, and `update_available`.
+
+```{r, eval = FALSE}
+psl_reminder(enable = TRUE) # weekly by default
+psl_reminder(enable = TRUE, every = 30) # or a month
+psl_reminder(enable = FALSE) # off; the interval is remembered
+psl_reminder() # just query, writes nothing
+```
+
+The preference is configuration rather than cache: it lives under
+`tools::R_user_dir("pslr", "config")`, so refreshing, pruning, or deleting the
+snapshot cache never changes it. `suppressPackageStartupMessages()` silences the
+message as usual, and a package that merely imports the namespace never triggers
+it.
+
+Note that a reminder is a prompt to *check*, not a claim that something changed
+— with the one exception of `update_available`, where the newer snapshot is
+already stored locally and the message suggests activating it with
+`psl_use("cache")` rather than downloading anything again.
+
+### Refreshing on a schedule
+
+`pslr` installs no scheduler, runs no daemon, and starts no background request.
+If you want a daily or weekly refresh, drive it from a scheduler you already
+have, with a one-line script:
+
+```{r, eval = FALSE}
+# refresh-psl.R
+pslr::psl_refresh()
+```
+
+```sh
+# cron: every day at 04:30
+30 4 * * * Rscript /path/to/refresh-psl.R
+
+# or a weekly GitHub Actions / systemd timer / Task Scheduler entry
+```
+
+Because `psl_refresh()` enforces the courtesy window itself, over-scheduling is
+harmless: extra runs return `skipped_recently` without making a request. Nothing
+is activated unless you pass `activate = TRUE`, so a scheduled refresh stages new
+bytes and leaves it to the next session to pick them up.
+
+### Snapshots, retention, and pruning
+
+Every distinct validated download is preserved by its checksum until you
+explicitly remove it. `psl_snapshots()` lists what this installation can resolve
+— one row per distinct SHA-256, so bytes stored twice collapse into one row:
+
+```{r}
+snapshots <- psl_snapshots()
+snapshots[c("checksum", "bundled", "size", "integrity")]
+```
+
+`psl_cache_prune()` is the explicit, offline, destructive counterpart. It
+protects the selected cache snapshot, every snapshot any source record still
+names, the snapshot active in this session, and the `keep` most recently
+retrieved snapshots beyond those:
+
+```{r, eval = FALSE}
+psl_cache_prune() # referenced snapshots, plus one more
+psl_cache_prune(keep = 0) # referenced snapshots only
+```
+
+Keeping history is not an accident: stable checksums are the seam `psl_diff()`
+needs to say what changed between two snapshots. Pruning to `keep = 0` gives that
+up in exchange for disk.
+
+### Comparing two snapshots
+
+`psl_diff(old, new)` reports which rules were added, removed, or changed between
+two snapshots — offline, from bytes already on this machine. The usual comparison
+is the snapshot you installed against one you have since retrieved:
+
+```{r, eval = FALSE}
+# After at least one psl_refresh(), the cache selection is a second snapshot:
+changes <- psl_diff("bundled", "cache")
+table(changes$change)
+head(changes)
+```
+
+That works only once local collection has started. Installing pslr makes no
+request and gives you exactly one snapshot: the bundled one. The first explicit
+`psl_refresh()` is what begins the history — from then on every distinct
+validated download is retained by checksum until you prune it, and each retained
+file is a valid `old` or `new`. Any path from `psl_snapshots()` can be passed
+directly, as can a historical revision you materialized as a file by other means;
+`psl_diff()` resolves no dates and downloads nothing.
+
+Either side also accepts a source-file path, a `psl_engine()`, or a
+`psl_rules()`-shaped table, which is enough to see the semantics without a cache:
+
+```{r}
+write_list <- function(private) {
+  path <- tempfile(fileext = ".dat")
+  writeLines(
+    c(
+      "// ===BEGIN ICANN DOMAINS===",
+      "com",
+      "// ===END ICANN DOMAINS===",
+      "// ===BEGIN PRIVATE DOMAINS===",
+      private,
+      "// ===END PRIVATE DOMAINS==="
+    ),
+    path
+  )
+  path
+}
+
+psl_diff(
+  write_list(c("a.example.com", "*.b.example.com")),
+  write_list(c("b.example.com", "c.example.com"))
+)
+```
+
+A row is keyed on a rule's *logical identity* — its canonical labels with any
+leading `*.` or `!` removed — so `*.b.example.com` becoming `b.example.com` is one
+`changed` row rather than an unrelated removal and addition. A rule moving
+between the ICANN and PRIVATE sections is `changed` for the same reason. The
+comparison happens after parsing and canonicalization, so comments, blank lines,
+whitespace, letter case, source ordering, and raw Unicode spelling never appear
+as changes. Two snapshots that agree return the same columns with zero rows.
+
+`psl_diff()` never activates anything: both sides resolve independently, and the
+session-global list keeps answering from whatever `psl_use()` last selected.
+Provenance travels with the result as attributes, so a diff can be filed
+alongside the identities it compared:
+
+```{r}
+d <- psl_diff("bundled", "bundled")
+attr(d, "old_version")[c("source", "checksum")]
+```
+
+## Multiple lists with engines
+
+`psl_use()` switches the one session-global list every query sees by default.
+`psl_engine()` instead builds a self-contained engine you can hold in a variable
+and query independently — so you can work with several lists at once, or give a
+component its own list, without mutating global session state. Every query
+function takes an `engine =` argument that threads a specific engine through that
+one call.
+
+```{r}
+engine <- psl_engine("bundled")
+public_suffix("example.co.uk", engine = engine)
+suffix_extract("www.example.co.uk", engine = engine)
+```
+
+An engine holds a compiled matcher backed by a C++ external pointer, which does
+not serialize across R sessions or parallel worker processes: saving and
+reloading an engine, or sending one to a worker, does not carry the matcher.
+This is why engines are described as process-local. To persist or ship an
+engine, record its snapshot descriptor with `psl_version()` and rebuild the
+engine in the target process:
+
+```{r, eval = FALSE}
+# In the target process, rebuild from a recorded snapshot file:
+engine <- psl_engine("path", path = "my_list.dat")
+```
+
+## Reproducibility
+
+A public-suffix result depends on both *which list* answered and *how hosts were
+normalized*. `psl_version()` reports both — the source-snapshot provenance and
+the runtime normalization identifiers — so a result can be reproduced later.
+Record this row alongside reproducibility-sensitive output.
+
+```{r}
+psl_version()
+```
+
+`psl_rules()` exposes the active rule table itself:
+
+```{r}
+nrow(psl_rules("icann"))
+head(psl_rules("private"), 3)
+```
+
+If the shipped index was generated under a different normalization profile or
+Unicode version than the installed `punycoder`, the list is transparently
+rebuilt in memory from source on activation, so an index is never mixed with
+hosts normalized under a different profile.
+
+## Security and scope notes
+
+* **Hostnames, not URLs.** The query functions accept DNS hostnames. URL-shaped
+  input is rejected as invalid; parse the host out of a URL first.
+* **Explicit network only.** Nothing in package load, queries, status, snapshot
+  inventory, reminders, pruning, examples, or tests touches the network. Only
+  `psl_refresh()` does, and only when you call it. It is HTTPS-only, rejects
+  embedded credentials, query strings, and downgrade or cross-origin redirects,
+  and enforces a source-size ceiling.
+* **Stored URLs stay private.** Source identity is stored under a digest of the
+  request URL rather than under the URL text, and `psl_snapshots()` reports only
+  how *many* sources reference a snapshot, never which.
+* **The PSL is advisory.** It is a best-effort community list, not an
+  authoritative statement of ownership or a security boundary by itself. Treat a
+  registrable-domain result as a heuristic for grouping, not proof of control.
+* **Session-global active list.** The active list is per-session global state;
+  there is no per-call list switching. Concurrent per-list queries are out of
+  scope for this release.
+
+## See also
+
+`pslr` is part of a small ecosystem of R packages by the same author:
+
+- **[punycoder](https://CRAN.R-project.org/package=punycoder)** — the Punycode and IDNA codec that `pslr` uses for host canonicalization. Use it directly for raw Unicode ↔ ACE round-trips outside the PSL context.
+- **[rurl](https://CRAN.R-project.org/package=rurl)** — full URL parsing, normalization, cleaning, and joining toolkit that uses `pslr` as its PSL engine. Reach for it when you need to work with complete URLs rather than bare hostnames.
+
+## Acknowledgments
+
+`pslr` serves the [Public Suffix List](https://publicsuffix.org), maintained by
+Mozilla and the wider community under the Mozilla Public License 2.0, and
+delegates host normalization (UTS #46 / IDNA) to the sibling `punycoder`
+package. Its matcher is built on `cpp11`.
+
+The full list of credits — prior art, dependencies, the standards this code
+implements, and the data sources it serves — is in
+[`ACKNOWLEDGMENTS.md`](https://gitlab.com/bart-turczynski/pslr/-/blob/main/ACKNOWLEDGMENTS.md).
